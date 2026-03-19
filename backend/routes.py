@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from backend.database import get_db, User, ReadingProgress, StreakLog, DaySnapshot, PasswordResetToken
 from backend.auth import (
     verify_password, hash_password, create_access_token,
-    get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES
+    get_current_user,
 )
 from backend.config import settings
 from backend.schemas import (
@@ -18,7 +18,7 @@ from backend.schemas import (
 )
 from backend.scheduler import (
     build_day_snapshot, build_future_schedule,
-    get_streak, get_today, date_key
+    get_streak, get_today, date_key, get_end_date, days_apart
 )
 from backend.plan_data import PLAN
 from backend.email_service import send_reset_email
@@ -185,7 +185,6 @@ def get_progress(
     total = len(PLAN)
     done_count = len(done_indices)
     pct = round(done_count / total * 100, 1)
-    from backend.scheduler import get_end_date, days_apart
     days_left = days_apart(today, get_end_date())
     pending = total - done_count
     per_day = max(1, -(-pending // (days_left + 1))) if days_left >= 0 else pending  # ceil division

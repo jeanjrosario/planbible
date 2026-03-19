@@ -32,6 +32,11 @@ def startup():
     create_tables()
 
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
 # ── PAGE ROUTES ───────────────────────────────────────────────
 
 @app.get("/", response_class=HTMLResponse)
