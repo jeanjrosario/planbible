@@ -1,0 +1,574 @@
+{% extends "base.html" %}
+{% block title %}Leitura Bíblica 2026{% endblock %}
+{% block extra_head %}
+<style>
+  body { padding-bottom: 0; }
+
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 20px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-logo { font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: -0.01em; }
+  .header-logo span { color: var(--text-dim); font-weight: 400; }
+  .header-right { display: flex; align-items: center; gap: 10px; }
+
+  .streak-chip {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--fire-bg); border: 1px solid #fed7aa;
+    border-radius: 999px; padding: 5px 12px 5px 8px;
+    cursor: pointer; transition: border-color 0.15s; font-size: 13px;
+  }
+  .streak-chip:hover { border-color: #fb923c; }
+  .streak-chip .num { font-weight: 600; color: var(--fire); }
+  .streak-chip .lbl { color: #9a3412; font-size: 12px; }
+
+  .logout-btn {
+    background: none; border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 12px;
+    font-size: 12px; color: var(--text-dim);
+    cursor: pointer; font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+  .logout-btn:hover { border-color: var(--border-strong); color: var(--text); }
+
+  .main { max-width: 560px; margin: 0 auto; padding: 24px 20px 88px; }
+
+  .progress-strip {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px 18px; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 16px;
+    animation: fadeUp 0.25s ease both;
+  }
+  .pct-ring { flex-shrink: 0; width: 44px; height: 44px; position: relative; }
+  .pct-ring svg { transform: rotate(-90deg); }
+  .pct-ring .rbg { fill: none; stroke: var(--border); stroke-width: 3; }
+  .pct-ring .rfg { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; transition: stroke-dashoffset 1s ease; }
+  .pct-lbl {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 600; color: var(--accent); font-family: var(--mono);
+  }
+  .progress-info { flex: 1; min-width: 0; }
+  .progress-title { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+  .progress-sub { font-size: 12px; color: var(--text-dim); font-family: var(--mono); }
+
+  .section-label {
+    font-size: 11px; font-weight: 500; text-transform: uppercase;
+    letter-spacing: 0.07em; color: var(--text-dim); margin: 20px 0 8px;
+  }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden; margin-bottom: 12px;
+    animation: fadeUp 0.3s ease both;
+  }
+  .date-row {
+    padding: 14px 18px 12px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: baseline; justify-content: space-between;
+  }
+  .date-main { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; }
+  .date-sub { font-size: 13px; color: var(--text-dim); }
+
+  .reading-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 13px 18px; border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background 0.1s;
+    user-select: none; -webkit-tap-highlight-color: transparent;
+  }
+  .reading-item:last-child { border-bottom: none; }
+  .reading-item:hover { background: var(--bg); }
+  .reading-item:active { background: var(--border); }
+  .reading-item.done { opacity: 0.42; }
+
+  .cb {
+    width: 20px; height: 20px; border-radius: 6px;
+    border: 1.5px solid var(--border-strong);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; transition: all 0.15s;
+  }
+  .reading-item.done .cb { background: var(--green); border-color: var(--green); }
+  .cb-check { width: 10px; height: 7px; opacity: 0; transition: opacity 0.1s; }
+  .reading-item.done .cb-check { opacity: 1; }
+  .ri-body { flex: 1; min-width: 0; }
+  .ri-cat { font-size: 10.5px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1px; }
+  .ri-text { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .reading-item.done .ri-text { text-decoration: line-through; color: var(--text-dim); }
+
+  .cat-Evangelhos { color: #2563eb; }
+  .cat-A-Lei      { color: #059669; }
+  .cat-Históricos { color: #b45309; }
+  .cat-Poéticos   { color: #7c3aed; }
+  .cat-Profetas   { color: #b91c1c; }
+  .cat-Atos       { color: #0891b2; }
+  .cat-Epístolas  { color: #6d28d9; }
+  .cat-Apocalipse { color: #be185d; }
+
+  .done-banner {
+    display: none; padding: 14px 18px; background: var(--green-bg);
+    border-top: 1px solid #bbf7d0; align-items: center; gap: 8px;
+    font-size: 13px; font-weight: 500; color: var(--green);
+  }
+  .done-banner.show { display: flex; }
+
+  .week-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px;
+    margin-bottom: 12px; animation: fadeUp 0.35s ease both;
+  }
+  .week-strip { display: grid; grid-template-columns: repeat(7,1fr); gap: 6px; }
+  .wd {
+    aspect-ratio: 1; border-radius: 8px; background: var(--bg);
+    border: 1px solid var(--border); display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 2px;
+  }
+  .wd-n { font-size: 9px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-dim); }
+  .wd-d { font-size: 13px; font-weight: 600; color: var(--text); }
+  .wd-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--border-strong); }
+  .wd.is-today { border-color: var(--accent); background: var(--accent-bg); }
+  .wd.is-today .wd-d { color: var(--accent); }
+  .wd.is-today .wd-dot { background: var(--accent); }
+  .wd.is-done { border-color: #86efac; background: var(--green-bg); }
+  .wd.is-done .wd-dot { background: var(--green); }
+
+  /* FULL PLAN */
+  .month-group { margin-bottom: 24px; }
+  .month-title {
+    font-size: 13px; font-weight: 600; color: var(--text-mid); margin-bottom: 6px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .month-pill {
+    font-size: 11px; font-family: var(--mono); color: var(--text-dim);
+    background: var(--border); border-radius: 999px; padding: 2px 8px;
+  }
+  .plan-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px; border-radius: 7px; transition: background 0.1s;
+  }
+  .plan-row:hover { background: var(--surface); }
+  .plan-row.is-today { background: var(--accent-bg); }
+  .plan-row.is-done { opacity: 0.38; }
+  .plan-num { font-size: 11px; font-family: var(--mono); color: var(--text-dim); width: 20px; text-align: right; flex-shrink: 0; }
+  .plan-row.is-today .plan-num { color: var(--accent); font-weight: 500; }
+  .plan-reading { flex: 1; font-size: 13.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .plan-row.is-done .plan-reading { text-decoration: line-through; color: var(--text-dim); }
+  .plan-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+
+  /* BOTTOM NAV */
+  .bottom-nav {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: rgba(255,255,255,0.94);
+    backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--border);
+    display: flex; padding-bottom: env(safe-area-inset-bottom); z-index: 100;
+  }
+  .nav-btn {
+    flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 3px; padding: 10px 8px;
+    cursor: pointer; border: none; background: transparent;
+    color: var(--text-dim); font-family: 'DM Sans', sans-serif;
+    font-size: 11px; font-weight: 500; transition: color 0.15s;
+  }
+  .nav-btn.active { color: var(--accent); }
+  .nav-icon { font-size: 20px; }
+
+  /* STREAK SHEET */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+    backdrop-filter: blur(6px); z-index: 200;
+    display: flex; align-items: flex-end; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .overlay.open { opacity: 1; pointer-events: all; }
+  .sheet {
+    background: var(--surface); border-radius: 16px 16px 0 0;
+    padding: 20px 24px 32px; width: 100%; max-width: 560px;
+    transform: translateY(16px); transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+  }
+  .overlay.open .sheet { transform: translateY(0); }
+  .sheet-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 20px; }
+  .sheet-fire { font-size: 44px; display: block; text-align: center; margin-bottom: 4px; }
+  .sheet-num { text-align: center; font-size: 52px; font-weight: 700; letter-spacing: -0.03em; color: var(--fire); line-height: 1; margin-bottom: 4px; }
+  .sheet-label { text-align: center; font-size: 14px; color: var(--text-mid); margin-bottom: 20px; }
+  .streak-cal { display: grid; grid-template-columns: repeat(7,1fr); gap: 4px; margin-bottom: 16px; }
+  .sc-day {
+    aspect-ratio: 1; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 500; background: var(--bg); color: var(--text-dim);
+  }
+  .sc-day.hit { background: var(--fire-bg); color: var(--fire); border: 1px solid #fed7aa; }
+  .sheet-msg { text-align: center; font-size: 13px; color: var(--text-mid); margin-bottom: 16px; min-height: 20px; }
+  .sheet-close {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 13px; font-family: 'DM Sans', sans-serif;
+    font-size: 14px; font-weight: 500; color: var(--text); cursor: pointer;
+  }
+  .sheet-close:hover { background: var(--border); }
+
+  .tab { display: none; }
+  .tab.active { display: block; }
+
+  .toast {
+    position: fixed; bottom: 76px; left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    background: var(--text); color: white; border-radius: 999px;
+    padding: 8px 16px; font-size: 13px; font-weight: 500;
+    z-index: 300; opacity: 0; pointer-events: none;
+    transition: all 0.2s cubic-bezier(0.4,0,0.2,1); white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .loading {
+    display: flex; align-items: center; justify-content: center;
+    padding: 60px 20px; color: var(--text-dim); font-size: 14px; gap: 10px;
+  }
+  .spinner {
+    width: 18px; height: 18px; border: 2px solid var(--border);
+    border-top-color: var(--accent); border-radius: 50%;
+    animation: spin 0.7s linear infinite; flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (min-width: 600px) {
+    .main { padding: 32px 24px 88px; }
+    .header { padding: 0 24px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<header class="header">
+  <div class="header-logo">Bíblia <span>2026</span></div>
+  <div class="header-right">
+    <div class="streak-chip" onclick="openSheet()">
+      <span>🔥</span>
+      <span class="num" id="streak-num">0</span>
+      <span class="lbl">dias</span>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">Sair</button>
+  </div>
+</header>
+
+<main class="main">
+  <div class="tab active" id="tab-hoje">
+    <div id="hoje-loading" class="loading"><div class="spinner"></div> Carregando...</div>
+    <div id="hoje-content" style="display:none">
+
+      <div class="progress-strip">
+        <div class="pct-ring">
+          <svg width="44" height="44" viewBox="0 0 44 44">
+            <circle class="rbg" cx="22" cy="22" r="18"/>
+            <circle class="rfg" id="ring-fg" cx="22" cy="22" r="18" stroke-dasharray="113.1" stroke-dashoffset="113.1"/>
+          </svg>
+          <div class="pct-lbl" id="pct-label">0%</div>
+        </div>
+        <div class="progress-info">
+          <div class="progress-title" id="progress-title">—</div>
+          <div class="progress-sub" id="progress-sub">—</div>
+        </div>
+      </div>
+
+      <div class="section-label">Hoje</div>
+      <div class="card">
+        <div class="date-row">
+          <div class="date-main" id="date-main">—</div>
+          <div class="date-sub" id="date-sub">—</div>
+        </div>
+        <div id="reading-list"></div>
+        <div class="done-banner" id="done-banner">✓ Todas as leituras de hoje concluídas</div>
+      </div>
+
+      <div class="section-label">Esta semana</div>
+      <div class="week-card">
+        <div class="week-strip" id="week-strip"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="tab" id="tab-plano">
+    <div id="plano-loading" class="loading"><div class="spinner"></div> Carregando...</div>
+    <div id="full-plan"></div>
+  </div>
+</main>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="switchTab('hoje',this)">
+    <span class="nav-icon">📖</span>Hoje
+  </button>
+  <button class="nav-btn" onclick="switchTab('plano',this)">
+    <span class="nav-icon">📅</span>Plano
+  </button>
+</nav>
+
+<div class="overlay" id="overlay" onclick="maybeClose(event)">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <span class="sheet-fire">🔥</span>
+    <div class="sheet-num" id="sheet-num">0</div>
+    <div class="sheet-label">dias seguidos</div>
+    <div class="streak-cal" id="streak-cal"></div>
+    <div class="sheet-msg" id="sheet-msg"></div>
+    <button class="sheet-close" onclick="closeSheet()">Fechar</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CAT_COLORS = {
+  'Evangelhos':'#2563eb','A Lei':'#059669','Históricos':'#b45309',
+  'Poéticos':'#7c3aed','Profetas':'#b91c1c','Atos':'#0891b2',
+  'Epístolas':'#6d28d9','Apocalipse':'#be185d'
+};
+const MN_SHORT = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const MN_LONG  = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const DN_LONG  = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
+const DN_SHORT = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+
+let STATE = null; // cached progress data
+
+// ── API ───────────────────────────────────────────────────────
+
+async function fetchProgress() {
+  const res = await fetch('/api/progress', { credentials: 'include' });
+  if (res.status === 401) { window.location.href = '/'; return null; }
+  return res.json();
+}
+
+async function toggleReading(idx) {
+  const res = await fetch('/api/progress/toggle', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reading_index: idx }),
+    credentials: 'include',
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+async function doLogout() {
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/';
+}
+
+// ── RENDER ────────────────────────────────────────────────────
+
+async function loadAndRender() {
+  STATE = await fetchProgress();
+  if (!STATE) return;
+  renderHoje();
+  document.getElementById('hoje-loading').style.display = 'none';
+  document.getElementById('hoje-content').style.display = 'block';
+}
+
+function renderHoje() {
+  const { today, done, total, pct, days_left, per_day_today, streak } = STATE;
+
+  // Streak
+  document.getElementById('streak-num').textContent = streak;
+
+  // Date
+  const d = new Date(today.date + 'T12:00:00');
+  document.getElementById('date-main').textContent = `${d.getDate()} de ${MN_SHORT[d.getMonth()]}`;
+  document.getElementById('date-sub').textContent = DN_LONG[d.getDay()];
+
+  // Progress ring
+  const pctRounded = Math.round(pct);
+  document.getElementById('pct-label').textContent = pctRounded + '%';
+  document.getElementById('ring-fg').style.strokeDashoffset = 113.1 * (1 - pct / 100);
+  document.getElementById('progress-title').textContent =
+    per_day_today <= 1 ? 'Uma leitura por dia' : `~${per_day_today} leituras por dia`;
+  document.getElementById('progress-sub').textContent =
+    `${done} / ${total} concluídas · ${days_left} dias restantes`;
+
+  // Readings
+  const list = document.getElementById('reading-list');
+  list.innerHTML = '';
+  const allDone = today.readings.length > 0 && today.readings.every(r => r.completed);
+  document.getElementById('done-banner').classList.toggle('show', allDone);
+
+  today.readings.forEach(r => {
+    const catClass = 'cat-' + r.category.replace(/\s/g, '-');
+    const el = document.createElement('div');
+    el.className = `reading-item${r.completed ? ' done' : ''}`;
+    el.innerHTML = `
+      <div class="cb">
+        <svg class="cb-check" viewBox="0 0 10 7" fill="none">
+          <path d="M1 3.5L3.5 6L9 1" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <div class="ri-body">
+        <div class="ri-cat ${catClass}">${r.category}</div>
+        <div class="ri-text">${r.reading}</div>
+      </div>`;
+    el.addEventListener('click', () => handleToggle(r.index, el, r));
+    list.appendChild(el);
+  });
+
+  renderWeek();
+}
+
+async function handleToggle(idx, el, reading) {
+  // Optimistic UI
+  reading.completed = !reading.completed;
+  el.classList.toggle('done', reading.completed);
+
+  const result = await toggleReading(idx);
+  if (!result) { reading.completed = !reading.completed; el.classList.toggle('done', reading.completed); return; }
+
+  // Update state
+  STATE.streak = result.streak;
+  document.getElementById('streak-num').textContent = result.streak;
+  document.getElementById('done-banner').classList.toggle('show', result.day_complete);
+
+  // Refresh done count
+  if (reading.completed) STATE.done++; else STATE.done--;
+  STATE.pct = Math.round(STATE.done / STATE.total * 100 * 10) / 10;
+  document.getElementById('pct-label').textContent = Math.round(STATE.pct) + '%';
+  document.getElementById('ring-fg').style.strokeDashoffset = 113.1 * (1 - STATE.pct / 100);
+  document.getElementById('progress-sub').textContent =
+    `${STATE.done} / ${STATE.total} concluídas · ${STATE.days_left} dias restantes`;
+
+  showToast(reading.completed ? 'Leitura concluída ✓' : 'Marcado como pendente');
+}
+
+function renderWeek() {
+  const strip = document.getElementById('week-strip');
+  strip.innerHTML = '';
+  const todayDate = new Date(STATE.today.date + 'T12:00:00');
+  const start = new Date(todayDate);
+  start.setDate(todayDate.getDate() - todayDate.getDay());
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(start); d.setDate(start.getDate() + i);
+    const key = d.toISOString().slice(0, 10);
+    const isToday = key === STATE.today.date;
+    const isPast = d < todayDate;
+
+    let allDone = false;
+    if (isToday) {
+      allDone = STATE.today.readings.length > 0 && STATE.today.readings.every(r => r.completed);
+    } else if (STATE.future[key]) {
+      allDone = false; // future days can't be done yet
+    }
+
+    const el = document.createElement('div');
+    el.className = `wd${isToday ? ' is-today' : ''}${allDone ? ' is-done' : ''}`;
+    el.innerHTML = `<div class="wd-n">${DN_SHORT[d.getDay()]}</div><div class="wd-d">${d.getDate()}</div><div class="wd-dot"></div>`;
+    strip.appendChild(el);
+  }
+}
+
+function renderFullPlan() {
+  const container = document.getElementById('full-plan');
+  const loading = document.getElementById('plano-loading');
+  container.innerHTML = '';
+  loading.style.display = 'none';
+
+  if (!STATE) return;
+
+  const todayDate = STATE.today.date;
+  const byMonth = {};
+
+  // Today's readings
+  const td = new Date(todayDate + 'T12:00:00');
+  const tmk = `${td.getFullYear()}-${td.getMonth()}`;
+  if (!byMonth[tmk]) byMonth[tmk] = { m: td.getMonth(), y: td.getFullYear(), entries: [] };
+  byMonth[tmk].entries.push({
+    key: todayDate,
+    d: td,
+    readings: STATE.today.readings.map(r => ({ reading: r.reading, category: r.category, done: r.completed })),
+    isToday: true,
+  });
+
+  // Future readings
+  Object.entries(STATE.future).forEach(([key, reads]) => {
+    const d = new Date(key + 'T12:00:00');
+    const mk = `${d.getFullYear()}-${d.getMonth()}`;
+    if (!byMonth[mk]) byMonth[mk] = { m: d.getMonth(), y: d.getFullYear(), entries: [] };
+    byMonth[mk].entries.push({
+      key, d,
+      readings: reads.map(r => ({ reading: r.reading, category: r.category, done: false })),
+      isToday: false,
+    });
+  });
+
+  Object.values(byMonth)
+    .sort((a, b) => a.y - b.y || a.m - b.m)
+    .forEach(({ m, y, entries }) => {
+      const doneCnt = entries.filter(e => e.readings.every(r => r.done)).length;
+      const grp = document.createElement('div');
+      grp.className = 'month-group';
+      grp.innerHTML = `<div class="month-title">${MN_LONG[m]}<span class="month-pill">${doneCnt}/${entries.length}</span></div>`;
+
+      entries.sort((a, b) => a.d - b.d).forEach(({ key, d, readings, isToday }) => {
+        const allDone = readings.every(r => r.done);
+        const color = readings.length > 0 ? (CAT_COLORS[readings[0].category] || '#999') : '#999';
+        const row = document.createElement('div');
+        row.className = `plan-row${isToday ? ' is-today' : ''}${allDone ? ' is-done' : ''}`;
+        row.innerHTML = `
+          <div class="plan-num">${d.getDate()}</div>
+          <div class="plan-reading">${readings.map(r => r.reading).join(' · ')}</div>
+          <div class="plan-dot" style="background:${color}"></div>`;
+        grp.appendChild(row);
+      });
+
+      container.appendChild(grp);
+    });
+}
+
+// ── STREAK SHEET ──────────────────────────────────────────────
+function openSheet() {
+  if (!STATE) return;
+  const streak = STATE.streak;
+  document.getElementById('sheet-num').textContent = streak;
+  const msgs = {1:'Ótimo começo! 🌱',2:'Dois dias seguidos!',3:'Três dias!',7:'Uma semana! ⭐',14:'Duas semanas! Incrível!',30:'Um mês! 👑'};
+  document.getElementById('sheet-msg').textContent = msgs[streak] || (streak > 0 ? `${streak} dias e contando!` : 'Comece hoje sua sequência!');
+
+  const cal = document.getElementById('streak-cal');
+  cal.innerHTML = '';
+  const today = new Date(STATE.today.date + 'T12:00:00');
+  for (let i = 27; i >= 0; i--) {
+    const d = new Date(today); d.setDate(today.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    const el = document.createElement('div');
+    // Streak days: approximate from streak count
+    const daysAgo = i;
+    const hit = daysAgo < streak;
+    el.className = `sc-day${hit ? ' hit' : ''}`;
+    el.textContent = d.getDate();
+    cal.appendChild(el);
+  }
+  document.getElementById('overlay').classList.add('open');
+}
+function closeSheet() { document.getElementById('overlay').classList.remove('open'); }
+function maybeClose(e) { if (e.target === document.getElementById('overlay')) closeSheet(); }
+
+// ── TABS ──────────────────────────────────────────────────────
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'plano') renderFullPlan();
+}
+
+// ── TOAST ─────────────────────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+loadAndRender();
+</script>
+{% endblock %}

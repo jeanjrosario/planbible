@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}Leitura Bíblica{% endblock %}</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8f7f4;
+    --surface: #ffffff;
+    --border: #e8e6e1;
+    --border-strong: #d0cdc6;
+    --text: #1a1916;
+    --text-mid: #6b6860;
+    --text-dim: #a8a49d;
+    --accent: #2563eb;
+    --accent-bg: #eff4ff;
+    --accent-hover: #1d4ed8;
+    --green: #16a34a;
+    --green-bg: #f0fdf4;
+    --fire: #ea580c;
+    --fire-bg: #fff7ed;
+    --red: #dc2626;
+    --red-bg: #fef2f2;
+    --radius: 10px;
+    --mono: 'DM Mono', monospace;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* AUTH PAGES */
+  .auth-wrap {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 20px;
+  }
+  .auth-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px 32px;
+    width: 100%;
+    max-width: 400px;
+  }
+  .auth-logo {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .auth-logo span { color: var(--text-dim); font-weight: 400; }
+  .auth-title { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 6px; }
+  .auth-sub { font-size: 14px; color: var(--text-mid); margin-bottom: 28px; }
+
+  .form-group { margin-bottom: 16px; }
+  .form-label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--text-mid); }
+  .form-input {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    color: var(--text);
+    background: var(--surface);
+    transition: border-color 0.15s, box-shadow 0.15s;
+    outline: none;
+  }
+  .form-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  }
+  .form-input::placeholder { color: var(--text-dim); }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.15s;
+    text-decoration: none;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    width: 100%;
+  }
+  .btn-primary:hover { background: var(--accent-hover); text-decoration: none; }
+  .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-ghost {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { background: var(--border); text-decoration: none; }
+
+  .alert {
+    padding: 12px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  .alert-error { background: var(--red-bg); border: 1px solid #fecaca; color: var(--red); }
+  .alert-success { background: var(--green-bg); border: 1px solid #bbf7d0; color: var(--green); }
+  .alert.show { display: block; }
+
+  .auth-footer { margin-top: 20px; text-align: center; font-size: 13px; color: var(--text-dim); }
+  .auth-footer a { color: var(--accent); }
+
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .auth-card { animation: fadeUp 0.3s ease both; }
+</style>
+{% block extra_head %}{% endblock %}
+</head>
+<body>
+{% block content %}{% endblock %}
+</body>
+</html>

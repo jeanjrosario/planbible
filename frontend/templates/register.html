@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Criar conta — Leitura Bíblica{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">📖 <span>Leitura Bíblica 2026</span></div>
+    <h1 class="auth-title">Criar conta</h1>
+    <p class="auth-sub">Comece seu plano de leitura bíblica</p>
+
+    <div class="alert alert-error" id="alert-error"></div>
+    <div class="alert alert-success" id="alert-success"></div>
+
+    <div class="form-group">
+      <label class="form-label">Nome</label>
+      <input class="form-input" type="text" id="name" placeholder="Seu nome" autocomplete="name">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" type="email" id="email" placeholder="seu@email.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Senha <span style="color:var(--text-dim);font-weight:400;">(mín. 6 caracteres)</span></label>
+      <input class="form-input" type="password" id="password" placeholder="••••••••" autocomplete="new-password">
+    </div>
+
+    <button class="btn btn-primary" id="btn-register" onclick="doRegister()">Criar conta</button>
+
+    <div class="auth-footer">
+      Já tem conta? <a href="/">Entrar</a>
+    </div>
+  </div>
+</div>
+
+<script>
+async function doRegister() {
+  const name = document.getElementById('name').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('btn-register');
+  const err = document.getElementById('alert-error');
+  const ok = document.getElementById('alert-success');
+  err.classList.remove('show');
+  ok.classList.remove('show');
+
+  if (!name || !email || !password) {
+    err.textContent = 'Preencha todos os campos';
+    err.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Criando conta...';
+
+  try {
+    const res = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password }),
+      credentials: 'include',
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const msg = data.detail?.[0]?.msg || data.detail || 'Erro ao criar conta';
+      err.textContent = msg;
+      err.classList.add('show');
+    } else {
+      // Auto login after register
+      const loginRes = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+        credentials: 'include',
+      });
+      if (loginRes.ok) {
+        window.location.href = '/app';
+      } else {
+        ok.textContent = 'Conta criada! Faça login para continuar.';
+        ok.classList.add('show');
+        setTimeout(() => window.location.href = '/', 1500);
+      }
+    }
+  } catch (e) {
+    err.textContent = 'Erro de conexão. Tente novamente.';
+    err.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Criar conta';
+  }
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Enter') doRegister(); });
+</script>
+{% endblock %}

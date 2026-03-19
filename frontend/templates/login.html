@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Entrar — Leitura Bíblica{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <div class="auth-logo">📖 <span>Leitura Bíblica 2026</span></div>
+    <h1 class="auth-title">Bem-vindo de volta</h1>
+    <p class="auth-sub">Entre na sua conta para continuar</p>
+
+    <div class="alert alert-error" id="alert-error"></div>
+
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input class="form-input" type="email" id="email" placeholder="seu@email.com" autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Senha</label>
+      <input class="form-input" type="password" id="password" placeholder="••••••••" autocomplete="current-password">
+    </div>
+    <div style="text-align:right; margin-bottom:20px;">
+      <a href="/forgot-password" style="font-size:13px; color:var(--text-dim);">Esqueci minha senha</a>
+    </div>
+
+    <button class="btn btn-primary" id="btn-login" onclick="doLogin()">Entrar</button>
+
+    <div class="auth-footer">
+      Não tem conta? <a href="/cadastro">Criar conta</a>
+    </div>
+  </div>
+</div>
+
+<script>
+async function doLogin() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const btn = document.getElementById('btn-login');
+  const alert = document.getElementById('alert-error');
+  alert.classList.remove('show');
+
+  if (!email || !password) {
+    alert.textContent = 'Preencha todos os campos';
+    alert.classList.add('show');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Entrando...';
+
+  try {
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+      credentials: 'include',
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert.textContent = data.detail || 'Erro ao entrar';
+      alert.classList.add('show');
+    } else {
+      window.location.href = '/app';
+    }
+  } catch (e) {
+    alert.textContent = 'Erro de conexão. Tente novamente.';
+    alert.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+  }
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+</script>
+{% endblock %}
