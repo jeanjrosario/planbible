@@ -4,12 +4,23 @@ from sqlalchemy.orm import sessionmaker, relationship
 from sqlalchemy.sql import func
 from backend.config import settings
 
-engine = create_engine(settings.DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
+engine = None
+SessionLocal = None
+
+
+def init_db():
+    global engine, SessionLocal
+    if not settings.DATABASE_URL:
+        print("[WARNING] DATABASE_URL not set — database disabled")
+        return
+    engine = create_engine(settings.DATABASE_URL)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def get_db():
+    if SessionLocal is None:
+        raise Exception("Database not configured. Set DATABASE_URL environment variable.")
     db = SessionLocal()
     try:
         yield db
@@ -81,4 +92,7 @@ class PasswordResetToken(Base):
 
 
 def create_tables():
-    Base.metadata.create_all(bind=engine)
+    if engine is None:
+        init_db()
+    if engine is not None:
+        Base.metadata.create_all(bind=engine)

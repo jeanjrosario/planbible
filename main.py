@@ -3,9 +3,8 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
-import os
 
-from backend.database import create_tables
+from backend.database import create_tables, init_db
 from backend.routes import router
 from backend.auth import get_current_user_optional
 
@@ -19,16 +18,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Mount static files
 app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
 templates = Jinja2Templates(directory="frontend/templates")
 
-# Include API routes
 app.include_router(router, prefix="/api")
 
 
 @app.on_event("startup")
 def startup():
+    init_db()
     create_tables()
 
 
